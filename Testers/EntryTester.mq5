@@ -9,12 +9,13 @@
 
 #include <Trade/Trade.mqh>
 
-#define OPEN_SLEEP_INTERVAL 6*60000
+#define OPEN_SLEEP_INTERVAL 10*60000
 
 input float lossMultiplier;
 input float profitMultiplier;
 
-input int indicatorPeriod;
+input int indicatorPeriod = 14;
+
 
 //+------------------------------------------------------------------+
 //| Globals                                                          |
@@ -39,11 +40,10 @@ int leverage = (int) AccountInfoInteger(ACCOUNT_LEVERAGE);
 int OnInit()
 {  
    entryHandle = iRSI(_Symbol, _Period, indicatorPeriod, PRICE_CLOSE);
-//   entryHandle = iCustom(_Symbol, PERIOD_CURRENT, "Schaff_trend_cycle_as", 250, 120, 400, 3);
-//   if (entryHandle == INVALID_HANDLE) 
-//   {
-//      Print("Error creating handle");
-//   }
+   if (entryHandle == INVALID_HANDLE) 
+   {
+      Print("Error creating handle");
+   }
    
    atrHandle = iATR(_Symbol, PERIOD_CURRENT, 14);
    if (atrHandle == INVALID_HANDLE) 
@@ -58,7 +58,7 @@ int OnInit()
 bool FillArrayFromBuffer(double &from_buffer[], int ind_handle, int amount, int buffer_index) 
 { 
    ResetLastError(); 
-   if(CopyBuffer(ind_handle, buffer_index, 1, amount, from_buffer)<0) 
+   if(CopyBuffer(ind_handle, buffer_index, 0, amount, from_buffer)<0) 
    { 
       PrintFormat("Failed to copy data from the iMACD indicator, error code %d",GetLastError()); 
       return(false); 
@@ -129,20 +129,12 @@ void OnTick()
    currentAsk = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    currentBid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
-   if (!PositionSelectByTicket(positionTicket))
+   if (entry == "sell")
    {
-      positionTicket = 0;
+     Short();
    }
-   
-   if(positionTicket <= 0)
+   else if (entry == "buy")
    {
-      if (entry == "sell")
-      {
-        Short();
-      }
-      else if (entry == "buy")
-      {
-        Long();
-      }
-   }   
+     Long();
+   }
 }
